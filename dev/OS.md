@@ -35,7 +35,7 @@ Windows에서 Ubuntu 유사 개발 환경을 다음의 두가지 방법 중 하�
 **MSYS2 + MinGW**를 설치하면, Linux와 유사한 개발 환경을 Windows에서 구축할 수 있습니다. 이 방식은 다음의 특징이 있습니다.
 - 작성한 소스 코드를 빌드하면 Windows 바이너리인 `*.exe` 파일이 나옴
 - 작성한 소스 코드는 특별한 수정없이 Ubunutu 환경에서 빌드할 수 있음
-- [설치 및 사용법](https://github.com/kmuvcl/kmuvcl/blob/master/dev/GCC%20with%20MinGW%20(%2B%20OpenGL).md) 참고  
+- [설치 및 사용법](https://github.com/kmuvcl/graphics/blob/main/dev/mingw.md) 참고  
 
 #### 2. **WSL2 (Windows Subsystem for Linux)** 이용하기
 Windows의 내부시스템(subsystem)으로 Linux 배포판을 설치하여 Windows에서 개발 환경을 구축할 수 있습니다.
