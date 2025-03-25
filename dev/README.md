@@ -1,25 +1,19 @@
 # 🛠️ 개발 정보  
 
-개발 정보를 담고 있는 디렉토리로 과제나 실습을 빌드할 때 **도움이 되는 팁 & 문서** 제공합니다.
+개발 정보를 담고 있는 디렉토리로 과제나 실습을 빌드할 때 **도움이 되는 팁 & 문서** 제공합니다. 아래 순서로 읽어보기 바랍니다.
 
-아래 순서로 읽어보기 바랍니다.
-
-✅ [운영 체제](./OS.md)
-
-✅ [pkg-config 설치하기](./pkg-config.md)
-
-✅ [OpenGL Extension Wrangler Library (GLEW)](./glew.md)
-
-✅ [OpenGL Mathematics (GLM)](./glm.md)
-
-✅ [pkg-config 설치하기](./pkg-config.md)
+* ✅ [운영 체제](./OS.md)
+* ✅ [pkg-config 설치하기](./pkg-config.md)
+* ✅ [GLEW 설치하기](./glew.md)
+* ✅ [GLFW 설치하기](./glfw.md)
+* ✅ [OpenGL Mathematics (GLM)](./glm.md)
 
 
 ---
 
 💡 **공식 운영체제:** Ubuntu LTS 18.04+ (18.04, 20.04, 22.04, 24.04 등)
 
-> ⚠️ **주의:** 비공식 운영체제에 대해서 본 교과목은 **공식적인 기술 지원을 제공하지 않습니다.**  
+> ⚠️ **주의:** 본 교과목은 **비공식 운영체제에 대한 기술 지원을 제공하지 않습니다.**  
 
 ---
 
