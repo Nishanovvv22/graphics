@@ -5,9 +5,13 @@
 아래 순서로 읽어보기 바랍니다.
 
 ✅ [운영 체제](./OS.md)
+
 ✅ [pkg-config 설치하기](./pkg-config.md)
+
 ✅ [OpenGL Extension Wrangler Library (GLEW)](./glew.md)
+
 ✅ [OpenGL Mathematics (GLM)](./glm.md)
+
 ✅ [pkg-config 설치하기](./pkg-config.md)
 
 
