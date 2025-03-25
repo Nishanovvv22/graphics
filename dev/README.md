@@ -3,6 +3,7 @@
 개발 정보를 담고 있는 디렉토리로 과제나 실습을 빌드할 때 **도움이 되는 팁 & 문서** 제공합니다. 아래 순서로 읽어보기 바랍니다.
 
 * ✅ [운영 체제](./OS.md)
+* ✅ [OpenGL 개발환경 구축](./OpenGL_DevSetup.pdf)
 * ✅ [pkg-config 설치하기](./pkg-config.md)
 * ✅ [GLEW 설치하기](./glew.md), [GLFW 설치하기](./glfw.md), [OpenGL Mathematics (GLM) 설치하기](./glm.md)
 * ✅ [Assimp 설치하기](./assimp.md)
