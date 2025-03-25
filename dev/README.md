@@ -4,7 +4,7 @@
 
 * ✅ [운영 체제](./OS.md)
 * ✅ [pkg-config 설치하기](./pkg-config.md)
-* ✅ [GLEW 설치하기](./glew.md), [GLFW 설치하기](./glfw.md), [OpenGL Mathematics (GLM)](./glm.md)
+* ✅ [GLEW 설치하기](./glew.md), [GLFW 설치하기](./glfw.md), [OpenGL Mathematics (GLM) 설치하기](./glm.md)
 * ✅ [Assimp 설치하기](./assimp.md)
 
 
