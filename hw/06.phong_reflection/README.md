@@ -1,30 +1,20 @@
-﻿# 빌드에 필요한 패키지
+﻿# 🚀 빌드
 
-## assimp
-`assimp`는 그래픽스 프로그래밍에서 장면(scene) 구성에 필요한 각종 에셋(예: 삼차원 모델, 텍스쳐 등) 데이터를 저장장치에서 메모리에 읽어들이고(import), 메모리에서 저장장치로 쓰는(export), 각종 기능에 관한 함수들로 구성된 C/C++ 라이브러리이다. 
+## 🛠️ 빌드에 필요한 패키지 
+빌드를 위해서는 아래 패키지가 설치되어 있어야 합니다. 이미 설치했다면 이 과정은 생략해도 좋습니다.
 
-여기서는 `assimp` 개발자용 라이브러리를 이용해 장면 구성에 필요한 에셋을 다루고 있으니, 프로그램 빌드에 앞서 아래와 같이 `libassimp-dev` 패키지를 설치하도록 한다.
+✅ [pkg-config 설치하기](../../dev/pkg-config.md)
+✅ [GLEW 설치하기](../../dev/glew.md)
+✅ [GLFW 설치하기](../../dev/glfw.md)
+✅ [OpenGL Mathematics (GLM) 설치하기](../../dev/glm.md)
+✅ [Assimp 설치하기](../../dev/assimp.md)
 
-### Ubuntu 
-
-Ubuntu 환경에서는 다음과 같이 `libassimp-dev`를 설치한다.
-
-```shell
-sudo apt install libassimp-dev
+## 🚀 빌드 방법
+Ubuntu 환경에서 `make` 명령으로 소스 코드로부터 실행가능한 파일을 빌드할 수 있습니다.
+```sh
+make
 ```
+---
 
-
-
-## pkg-config
-`pkg-config`는 Linux 시스템에 설치된 외부 라이브러리(예: GLEW, GLFW, Assimp 등)에 대한 include 경로나 library 링크 옵션 등을 손쉽게 알아낼 수 있도록 도와주는 프로그램이다. 
-
-여기서는 `make`를 이용한 프로그램의 빌드를 편리하게 하기 위해 `Makefile` 파일에서 `pkg-config`를 사용하고 있으니, 프로그램 빌드에 앞서 아래와 같이 `pkg-config` 패키지를 설치하도록 한다.
-
-### Ubuntu 
-
-Ubuntu 환경에서는 다음과 같이 `pkg-config`를 설치한다.
-
-```shell
-sudo apt install pkg-config
-```
-
+## 📢 구현 시 유의사항  
+✅ 함께 첨부된 **PDF 문서**를 참고할 것  

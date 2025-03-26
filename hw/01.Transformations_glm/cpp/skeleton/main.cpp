@@ -9,9 +9,9 @@ void glm_vec_test();
 void glm_mat_test();
 void glm_transform_test();
 
-std::ostream &operator<< (std::ostream&, const glm::mat4);
-std::ostream &operator<< (std::ostream&, const glm::vec3);
-std::ostream &operator<< (std::ostream&, const glm::vec4);
+std::ostream& operator<< (std::ostream&, const glm::mat4);
+std::ostream& operator<< (std::ostream&, const glm::vec3);
+std::ostream& operator<< (std::ostream&, const glm::vec4);
 
 int main()
 {
@@ -133,21 +133,21 @@ void glm_transform_test() {
 }
 
 // DO NOT EDIT below this line
-std::ostream &operator<< (std::ostream &os, const glm::vec3 v) {
+std::ostream& operator<< (std::ostream& os, const glm::vec3 v) {
   os << "[";
   os << v.x << ", " << v.y << ", " << v.z;
   os << "]";
   
   return os;
 }
-std::ostream &operator<< (std::ostream &os, const glm::vec4 v) {
+std::ostream& operator<< (std::ostream& os, const glm::vec4 v) {
   os << "[";
   os << v.x << ", " << v.y << ", " << v.z << ", " << v.w;
   os << "]";
   
   return os;
 }
-std::ostream &operator<< (std::ostream &os, const glm::mat4 m) {
+std::ostream& operator<< (std::ostream& os, const glm::mat4 m) {
   os << "[" << m[0][0] << ", " << m[1][0] << ", " << m[2][0] << ", " << m[3][0] << "]" << std::endl;
   os << "[" << m[0][1] << ", " << m[1][1] << ", " << m[2][1] << ", " << m[3][1] << "]" << std::endl;
   os << "[" << m[0][2] << ", " << m[1][2] << ", " << m[2][2] << ", " << m[3][2] << "]" << std::endl;
