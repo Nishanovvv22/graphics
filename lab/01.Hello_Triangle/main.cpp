@@ -1,245 +1,257 @@
-﻿///// main.cpp
-///// OpenGL 3+, GLSL 1.20, GLEW, GLFW3
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-
 #include <iostream>
-#include <string>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <cassert>
 
-////////////////////////////////////////////////////////////////////////////////
-/// 쉐이더 관련 변수 및 함수
-////////////////////////////////////////////////////////////////////////////////
-GLuint  program;          // 쉐이더 프로그램 객체의 레퍼런스 값
-GLint   loc_a_position;   // attribute 변수 a_position 위치
-GLint   loc_a_color;      // attribute 변수 a_color 위치
+// Include model data
+#include "models/cube_triangle_soup.hpp"
+#include "models/avocado_triangle_soup.hpp"
+#include "models/donut_triangle_soup.hpp"
+#include "models/cube_vlist_triangles.hpp"
+#include "models/avocado_vlist_triangles.hpp"
+#include "models/donut_vlist_triangles.hpp"
 
-GLuint  position_buffer;  // GPU 메모리에서 position_buffer의 위치
-GLuint  color_buffer;     // GPU 메모리에서 color_buffer의 위치
+// Shader and buffer variables
+GLuint program;
+GLint loc_a_position;
+GLint loc_a_color;
+GLuint position_buffer = 0;
+GLuint color_buffer = 0;
+GLuint index_buffer = 0;
 
-GLuint create_shader_from_file(const std::string& filename, GLuint shader_type);
-void init_shader_program();
-////////////////////////////////////////////////////////////////////////////////
+// Model and render mode enums
+enum MeshModel { kCube, kAvocado, kDonut };
+enum MeshType { kTriangleSoup, kVlistTriangles };
 
+MeshModel g_mesh_model = kCube;
+MeshType g_mesh_type = kTriangleSoup;
 
-////////////////////////////////////////////////////////////////////////////////
-/// 렌더링 관련 변수 및 함수
-////////////////////////////////////////////////////////////////////////////////
-// per-vertex 3D positions (x, y, z)
-GLfloat g_position[] = {
-  0.5f,  0.5f,  0.0f,          // 0th vertex position
-  -0.5f, -0.5f,  0.0f,          // 1st vertex position
-  0.5f, -0.5f,  0.0f,          // 2nd vertex position
-};
-
-// per-vertex RGB color (r, g, b)
-GLfloat g_color[] = {
-  1.0f, 0.0f, 0.0f,             // 0th vertex color (red)
-  1.0f, 0.0f, 0.0f,             // 1st vertex color (red)
-  1.0f, 0.0f, 0.0f,             // 2nd vertex color (red)
-};
-
-void init_buffer_objects();     // VBO init 함수: GPU의 VBO를 초기화하는 함수.
-void render_object();           // rendering 함수: 물체(삼각형)를 렌더링하는 함수.
-////////////////////////////////////////////////////////////////////////////////
-
-
-// GLSL 파일을 읽어서 컴파일한 후 쉐이더 객체를 생성하는 함수
-GLuint create_shader_from_file(const std::string& filename, GLuint shader_type)
-{
-  GLuint shader = 0;
-
-  shader = glCreateShader(shader_type);
-
-  std::ifstream shader_file(filename.c_str());
-  std::string shader_string;
-
-  shader_string.assign(
-    (std::istreambuf_iterator<char>(shader_file)),
-    std::istreambuf_iterator<char>());
-
-  // Get rid of BOM in the head of shader_string
-  // Because, some GLSL compiler (e.g., Mesa Shader compiler) cannot handle UTF-8 with BOM
-  if (shader_string.compare(0, 3, "\xEF\xBB\xBF") == 0)  // Is the file marked as UTF-8?
-  {
-    std::cout << "Shader code (" << filename << ") is written in UTF-8 with BOM" << std::endl;
-    std::cout << "  When we pass the shader code to GLSL compiler, we temporarily get rid of BOM" << std::endl;
-    shader_string.erase(0, 3);                  // Now get rid of the BOM.
-  }
-
-  const GLchar* shader_src = shader_string.c_str();
-  glShaderSource(shader, 1, (const GLchar * *)& shader_src, NULL);
-  glCompileShader(shader);
-
-  GLint is_compiled;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
-  if (is_compiled != GL_TRUE)
-  {
-    std::cout << "Shader COMPILE error: " << std::endl;
-
-    GLint buf_len;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &buf_len);
-
-    std::string log_string(1 + buf_len, '\0');
-    glGetShaderInfoLog(shader, buf_len, 0, (GLchar *)log_string.c_str());
-
-    std::cout << "error_log: " << log_string << std::endl;
-
-    glDeleteShader(shader);
-    shader = 0;
-  }
-
-  return shader;
+// Read shader file
+std::string read_file(const std::string& filename) {
+    std::ifstream file(filename);
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
 
-// vertex shader와 fragment shader를 링크시켜 program을 생성하는 함수
-void init_shader_program()
-{
-  GLuint vertex_shader
-    = create_shader_from_file("./shader/vertex.glsl", GL_VERTEX_SHADER);
+// Compile shader from file
+GLuint create_shader_from_file(const std::string& filename, GLenum shader_type) {
+    std::string shader_source = read_file(filename);
+    const char* source_cstr = shader_source.c_str();
 
-  std::cout << "vertex_shader id: " << vertex_shader << std::endl;
-  assert(vertex_shader != 0);
+    GLuint shader = glCreateShader(shader_type);
+    glShaderSource(shader, 1, &source_cstr, nullptr);
+    glCompileShader(shader);
 
-  GLuint fragment_shader
-    = create_shader_from_file("./shader/fragment.glsl", GL_FRAGMENT_SHADER);
+    GLint compiled;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) {
+        char log[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, log);
+        std::cerr << "Shader compilation error in " << filename << ":\n" << log << std::endl;
+        exit(1);
+    }
 
-  std::cout << "fragment_shader id: " << fragment_shader << std::endl;
-  assert(fragment_shader != 0);
-
-  program = glCreateProgram();
-  glAttachShader(program, vertex_shader);
-  glAttachShader(program, fragment_shader);
-  glLinkProgram(program);
-
-  GLint is_linked;
-  glGetProgramiv(program, GL_LINK_STATUS, &is_linked);
-  if (is_linked != GL_TRUE)
-  {
-    std::cout << "Shader LINK error: " << std::endl;
-
-    GLint buf_len;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &buf_len);
-
-    std::string log_string(1 + buf_len, '\0');
-    glGetProgramInfoLog(program, buf_len, 0, (GLchar *)log_string.c_str());
-
-    std::cout << "error_log: " << log_string << std::endl;
-
-    glDeleteProgram(program);
-    program = 0;
-  }
-
-  std::cout << "program id: " << program << std::endl;
-  assert(program != 0);
-
-  loc_a_position = glGetAttribLocation(program, "a_position");
-  loc_a_color = glGetAttribLocation(program, "a_color");
+    return shader;
 }
 
-void init_buffer_objects()
-{
-  /////////////////////////////////////////////////////////////////////
-  /// TODO: CPU 메모리에서 GPU 메모리로 물체의 데이터를 전송하는 부분 - BEGIN
-  /////////////////////////////////////////////////////////////////////
-  
+// Initialize shader program
+void init_shader_program() {
+    GLuint vertex_shader = create_shader_from_file("shader/vertex.glsl", GL_VERTEX_SHADER);
+    GLuint fragment_shader = create_shader_from_file("shader/fragment.glsl", GL_FRAGMENT_SHADER);
 
-  /////////////////////////////////////////////////////////////////////
-  /// TODO: CPU 메모리에서 GPU 메모리로 물체의 데이터를 전송하는 부분 - END
-  /////////////////////////////////////////////////////////////////////
+    program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+
+    GLint linked;
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        char log[1024];
+        glGetProgramInfoLog(program, 1024, nullptr, log);
+        std::cerr << "Shader linking error:\n" << log << std::endl;
+        exit(1);
+    }
+
+    glUseProgram(program);
+
+    loc_a_position = glGetAttribLocation(program, "a_position");
+    loc_a_color = glGetAttribLocation(program, "a_color");
+
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
 }
 
+// Upload data to GPU buffers
+void update_buffer_objects() {
+    if (position_buffer) glDeleteBuffers(1, &position_buffer);
+    if (color_buffer) glDeleteBuffers(1, &color_buffer);
+    if (index_buffer) glDeleteBuffers(1, &index_buffer);
 
-// object rendering: 현재 scene은 삼각형 하나로 구성되어 있음.
-void render_object()
-{
-  // 특정 쉐이더 프로그램 사용
-  glUseProgram(program);
+    glGenBuffers(1, &position_buffer);
+    glGenBuffers(1, &color_buffer);
 
-  /////////////////////////////////////////////////////////////////////
-  /// TODO: 물체를 그리는 데이터를 CPU 메모리에서 GPU 메모리로 전송 - BEGIN
-  /////////////////////////////////////////////////////////////////////
+    if (g_mesh_type == kTriangleSoup) {
+        const float* positions = nullptr;
+        const float* colors = nullptr;
+        int vertex_count = 0;
 
-  // 버텍스 쉐이더의 attribute 중 a_position 부분 활성화
-  glEnableVertexAttribArray(loc_a_position);
-  // 현재 배열 버퍼에 있는 데이터를 버텍스 쉐이더 a_position에 해당하는 attribute와 연결
-  glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, 0, g_position);
+        switch (g_mesh_model) {
+            case kCube:
+                positions = cube_triangle_soup::positions;
+                colors = cube_triangle_soup::colors;
+                vertex_count = cube_triangle_soup::num_vertices;
+                break;
+            case kAvocado:
+                positions = avocado_triangle_soup::positions;
+                colors = avocado_triangle_soup::colors;
+                vertex_count = avocado_triangle_soup::num_vertices;
+                break;
+            case kDonut:
+                positions = donut_triangle_soup::positions;
+                colors = donut_triangle_soup::colors;
+                vertex_count = donut_triangle_soup::num_vertices;
+                break;
+        }
 
-  // 버텍스 쉐이더의 attribute 중 a_color 부분 활성화
-  glEnableVertexAttribArray(loc_a_color);
-  // 현재 배열 버퍼에 있는 데이터를 버텍스 쉐이더 a_color에 해당하는 attribute와 연결
-  glVertexAttribPointer(loc_a_color, 3, GL_FLOAT, GL_FALSE, 0, g_color);
+        glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+        glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), positions, GL_STATIC_DRAW);
 
-  // triangle soup으로 물체 그리기
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+        glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), colors, GL_STATIC_DRAW);
+    } else {
+        const float* positions = nullptr;
+        const float* colors = nullptr;
+        const unsigned int* indices = nullptr;
+        int vertex_count = 0;
+        int index_count = 0;
 
-  // 정점 attribute 배열 비활성화
-  glDisableVertexAttribArray(loc_a_position);
-  glDisableVertexAttribArray(loc_a_color);
+        glGenBuffers(1, &index_buffer);
 
-  /////////////////////////////////////////////////////////////////////
-  /// TODO: 물체를 그리는 데이터를 CPU 메모리에서 GPU 메모리로 전송 - END
-  /////////////////////////////////////////////////////////////////////
+        switch (g_mesh_model) {
+            case kCube:
+                positions = cube_vlist::positions;
+                colors = cube_vlist::colors;
+                indices = cube_vlist::indices;
+                vertex_count = cube_vlist::num_vertices;
+                index_count = cube_vlist::num_indices;
+                break;
+            case kAvocado:
+                positions = avocado_vlist::positions;
+                colors = avocado_vlist::colors;
+                indices = avocado_vlist::indices;
+                vertex_count = avocado_vlist::num_vertices;
+                index_count = avocado_vlist::num_indices;
+                break;
+            case kDonut:
+                positions = donut_vlist::positions;
+                colors = donut_vlist::colors;
+                indices = donut_vlist::indices;
+                vertex_count = donut_vlist::num_vertices;
+                index_count = donut_vlist::num_indices;
+                break;
+        }
 
-  // 쉐이더 프로그램 사용해제
-  glUseProgram(0);
+        glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+        glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), positions, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+        glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), colors, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    }
 }
 
-
-int main(void)
-{
-  GLFWwindow* window;
-
-  // Initialize GLFW library
-  if (!glfwInit())
-    return -1;
-
-  // Create a GLFW window containing a OpenGL context
-  window = glfwCreateWindow(500, 500, "Hello Triangle", NULL, NULL);
-  if (!window)
-  {
-    glfwTerminate();
-    return -1;
-  }
-
-  // Make the current OpenGL context as one in the window
-  glfwMakeContextCurrent(window);
-
-  // Initialize GLEW library
-  if (glewInit() != GLEW_OK)
-    std::cout << "GLEW Init Error!" << std::endl;
-
-  // Print out the OpenGL version supported by the graphics card in my PC
-  std::cout << glGetString(GL_VERSION) << std::endl;
-
-  // Init OpenGL
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-  glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-
-  init_shader_program();
-
-  // TODO: GPU의 VBO를 초기화하는 함수 호출
-  
-
-  // Loop until the user closes the window
-  while (!glfwWindowShouldClose(window))
-  {
+// Render the selected object
+void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(program);
 
-    // 물체를 렌더링하는 함수 호출
-    render_object();
+    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+    glEnableVertexAttribArray(loc_a_position);
+    glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-    // Swap front and back buffers
-    glfwSwapBuffers(window);
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glEnableVertexAttribArray(loc_a_color);
+    glVertexAttribPointer(loc_a_color, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-    // Poll for and process events
-    glfwPollEvents();
-  }
+    if (g_mesh_type == kTriangleSoup) {
+        int count = 0;
+        switch (g_mesh_model) {
+            case kCube: count = cube_triangle_soup::num_vertices; break;
+            case kAvocado: count = avocado_triangle_soup::num_vertices; break;
+            case kDonut: count = donut_triangle_soup::num_vertices; break;
+        }
+        glDrawArrays(GL_TRIANGLES, 0, count);
+    } else {
+        int count = 0;
+        switch (g_mesh_model) {
+            case kCube: count = cube_vlist::num_indices; break;
+            case kAvocado: count = avocado_vlist::num_indices; break;
+            case kDonut: count = donut_vlist::num_indices; break;
+        }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+    }
 
-  glfwTerminate();
+    glDisableVertexAttribArray(loc_a_position);
+    glDisableVertexAttribArray(loc_a_color);
+}
 
-  return 0;
+// Handle key input for model/mode switching
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS) return;
+
+    switch (key) {
+        case GLFW_KEY_1: g_mesh_model = kCube; g_mesh_type = kTriangleSoup; break;
+        case GLFW_KEY_2: g_mesh_model = kAvocado; g_mesh_type = kTriangleSoup; break;
+        case GLFW_KEY_3: g_mesh_model = kDonut; g_mesh_type = kTriangleSoup; break;
+        case GLFW_KEY_4: g_mesh_model = kCube; g_mesh_type = kVlistTriangles; break;
+        case GLFW_KEY_5: g_mesh_model = kAvocado; g_mesh_type = kVlistTriangles; break;
+        case GLFW_KEY_6: g_mesh_model = kDonut; g_mesh_type = kVlistTriangles; break;
+    }
+
+    update_buffer_objects();
+}
+
+int main() {
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return -1;
+    }
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "TriangleMesh", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        return -1;
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+    glfwSetKeyCallback(window, key_callback);
+
+    init_shader_program();
+    update_buffer_objects();
+
+    while (!glfwWindowShouldClose(window)) {
+        render();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
 }
